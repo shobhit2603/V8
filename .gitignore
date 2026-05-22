@@ -1,0 +1,6 @@
+*.env
+secrets.yml
+node_modules
+dist
+build
+.vscode

@@ -32,3 +32,10 @@ export async function createPod(sandboxId) {
 
   return response.body;
 }
+
+export async function deletePod(sandboxId) {
+  await k8sCoreApi.deleteNamespacedPod({
+    name: `sandbox-pod-${sandboxId}`,
+    namespace: "default"
+  });
+}

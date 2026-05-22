@@ -1,12 +1,10 @@
-kind: Service
+kind: service
 apiVersion: v1
 metadata:
-  name: sandbox-server-service
-  labels:
-    name: sandbox-server-service
+  name: router-service
 spec:
   selector:
-    app: sandbox
+    app: router
   type: ClusterIP
   ports:
     - name: http
