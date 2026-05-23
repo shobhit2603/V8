@@ -1,9 +1,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: v0-ingress
+  name: v8-ingress
   labels:
-    app.kubernetes.io/name: v0-ingress
+    app.kubernetes.io/name: v8-ingress
 spec:
   ingressClassName: nginx
   rules:
