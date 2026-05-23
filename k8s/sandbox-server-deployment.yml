@@ -16,7 +16,7 @@ spec:
         app: sandbox
     spec:
       containers:
-        - image: sandbox-server
+        - image: sandbox
           name: main-sandbox-server
           resources:
             requests:
