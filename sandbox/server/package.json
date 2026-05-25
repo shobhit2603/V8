@@ -2,14 +2,15 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon -L server.js"
+    "dev": "nodemon -L server.js",
+    "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Shobhit",
   "license": "ISC",
   "dependencies": {
     "@kubernetes/client-node": "^1.4.0",
