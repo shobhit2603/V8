@@ -1,68 +1,83 @@
 import k8sCoreApi from "./config.js";
 
 export async function createPod(sandboxId) {
-  const podManifest = {
-    metadata: {
-      name: `sandbox-pod-${sandboxId}`,
-      labels: {
-        sandboxId: sandboxId,
-      },
-    },
-    spec: {
-      volumes: [
-        {
-          name: "workspacevolume",
-          emptyDir: {},
+    const podManifest = {
+        metadata: {
+            name: `sandbox-pod-${sandboxId}`,
+            labels: {
+                sandboxId: sandboxId
+            }
         },
-      ],
-      containers: [
-        {
-          image: "template",
-          name: "sandbox-container",
-          ports: [
-            { containerPort: 3000, protocol: "TCP", name: "sandbox-port" },
-          ],
-          resources: {
-            limits: { cpu: "500m", memory: "1Gi" },
-            requests: { cpu: "250m", memory: "512Mi" },
-          },
-          volumeMounts: [
-            {
-              name: "workspacevolume",
-              mountPath: "/workspace",
-            },
-          ],
-        },
-        {
-          image: "agent",
-          name: "agent-container",
-          ports: [{ containerPort: 5000, protocol: "TCP", name: "agent-port" }],
-          resources: {
-            limits: { cpu: "500m", memory: "128Mi" },
-            requests: { cpu: "250m", memory: "64Mi" },
-          },
-          volumeMounts: [
-            {
-              name: "workspacevolume",
-              mountPath: "/workspace",
-            },
-          ],
-        },
-      ],
-    },
-  };
+        spec: {
+            volumes: [
+                {
+                    name: "workspacevolume",
+                    emptyDir: {}
+                }
+            ],
+            initContainers: [
+                {
+                    image: "template",
+                    name: "init-container",
+                    command: [ "sh", "-c", "cp -r /workspace/. /load/" ],
+                    volumeMounts: [
+                        {
+                            name: "workspacevolume",
+                            mountPath: "/load"
+                        }
+                    ],
+                    resources: {
+                        limits: { cpu: "100m", memory: "500Mi" },
+                        requests: { cpu: "50m", memory: "256Mi" }
+                    }
+                }
+            ],
+            containers: [
+                {
+                    image: "template",
+                    name: "sandbox-container",
+                    ports: [ { containerPort: 5173, protocol: "TCP", name: "sandbox-port" } ],
+                    resources: {
+                        limits: { cpu: "500m", memory: "1Gi" },
+                        requests: { cpu: "250m", memory: "512Mi" }
+                    },
+                    volumeMounts: [
+                        {
+                            name: "workspacevolume",
+                            mountPath: "/workspace"
+                        }
+                    ]
+                },
+                {
+                    image: "agent",
+                    name: "agent-container",
+                    ports: [ { containerPort: 3000, protocol: "TCP", name: "agent-port" } ],
+                    resources: {
+                        limits: { cpu: "500m", memory: "128Mi" },
+                        requests: { cpu: "250m", memory: "64Mi" }
+                    },
+                    volumeMounts: [
+                        {
+                            name: "workspacevolume",
+                            mountPath: "/workspace"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
 
-  const response = await k8sCoreApi.createNamespacedPod({
-    namespace: "default",
-    body: podManifest,
-  });
+    const response = await k8sCoreApi.createNamespacedPod({
+        namespace: "default",
+        body: podManifest
+    })
 
-  return response.body;
+    return response.body;
 }
 
 export async function deletePod(sandboxId) {
-  await k8sCoreApi.deleteNamespacedPod({
-    name: `sandbox-pod-${sandboxId}`,
-    namespace: "default",
-  });
+    await k8sCoreApi.deleteNamespacedPod({
+        name: `sandbox-pod-${sandboxId}`,
+        namespace: "default"
+    })
 }

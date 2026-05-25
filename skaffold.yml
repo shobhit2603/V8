@@ -2,7 +2,7 @@ apiVersion: skaffold/v4beta13
 kind: Config
 
 metadata:
-  name: v8
+  name: v0
 
 
 
@@ -41,3 +41,4 @@ manifests:
     - k8s/sandbox-server-deployment.yml
     - k8s/sandbox-server-service.yml
     - k8s/secrets.yml
+
