@@ -19,7 +19,7 @@ export const IGNORE_PATTERNS = [
   ".env.*.local",
   ".git",
   ".DS_Store",
-  "dist",           // built output — usually not worth syncing
+  "dist", // built output — usually not worth syncing
   "*.log",
 ];
 
@@ -39,7 +39,7 @@ export function shouldIgnore(relPath) {
         return part.endsWith(ext);
       }
       return part === pattern;
-    })
+    }),
   );
 }
 

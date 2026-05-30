@@ -34,15 +34,15 @@ export function startWatcher(s3Client, bucket, projectPrefix, workdir) {
   const watcher = chokidar.watch(workdir, {
     // ── Ignore rules ────────────────────────────────────────────────────────
     ignored: [
-      /(^|[/\\])\../,           // dot-files / dot-folders
+      /(^|[/\\])\../, // dot-files / dot-folders
       /node_modules/,
-      /\.env(\..*)?$/,          // .env, .env.local, .env.production, etc.
+      /\.env(\..*)?$/, // .env, .env.local, .env.production, etc.
       /dist[/\\]/,
       /\.log$/,
     ],
 
-    persistent: true,           // keep process alive
-    ignoreInitial: true,        // skip events for files already on disk at start
+    persistent: true, // keep process alive
+    ignoreInitial: true, // skip events for files already on disk at start
     awaitWriteFinish: {
       // Wait until the file size stabilises before firing the event.
       // Prevents uploading partially-written files.
@@ -68,7 +68,7 @@ export function startWatcher(s3Client, bucket, projectPrefix, workdir) {
           s3Client,
           bucket,
           toS3Key(projectPrefix, relKey),
-          absolutePath
+          absolutePath,
         );
         log(`  ↑ synced  ${relKey}`);
       } catch (err) {
