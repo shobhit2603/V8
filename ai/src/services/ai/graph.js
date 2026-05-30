@@ -8,10 +8,8 @@ const state = new StateSchema({
 
 
 const intentNode = async ({ messages }, config) => {
-    console.log("Invoking Intent Agent with messages:", messages, "and config:", config)
 
     const response = await intentAgent.invoke({ messages }, config)
-
 
     const plan = response.structuredResponse.implementationPlan
 
@@ -22,6 +20,9 @@ const intentNode = async ({ messages }, config) => {
     }
 }
 const codeNode = async ({ messages }, config) => {
+
+    console.log("Invoking Code Agent with messages:", messages, "and config:", config)
+
     const response = await codeAgent.invoke({ messages }, config)
 
     return {
