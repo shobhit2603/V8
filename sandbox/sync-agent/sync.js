@@ -26,71 +26,69 @@ import { buildPrefix, log } from "./src/utils.js";
 const WORKDIR = process.env.WORKDIR || "/workspace";
 
 const REQUIRED_ENV = [
-  "AWS_REGION",
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-  "S3_BUCKET",
-  "PROJECTID",
+    "AWS_REGION",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "S3_BUCKET",
+    "PROJECTID",
 ];
 
 function validateEnv() {
-  const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    console.error(
-      `[FATAL] Missing required environment variables: ${missing.join(", ")}`,
-    );
-    process.exit(1);
-  }
+    const missing = REQUIRED_ENV.filter((key) => !process.env[ key ]);
+    if (missing.length > 0) {
+        console.error(
+            `[FATAL] Missing required environment variables: ${missing.join(", ")}`
+        );
+        process.exit(1);
+    }
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
 async function main() {
-  validateEnv();
+    validateEnv();
 
-  const bucket = process.env.S3_BUCKET;
-  const projectPrefix = buildPrefix(process.env.PROJECTID); // e.g. "proj-abc123/"
+    const bucket = process.env.S3_BUCKET;
+    const projectPrefix = buildPrefix(process.env.PROJECTID); // e.g. "proj-abc123/"
 
-  log(
-    `Starting sync — project: "${process.env.PROJECTID}", bucket: "${bucket}", workdir: "${WORKDIR}"`,
-  );
+    log(`Starting sync — project: "${process.env.PROJECTID}", bucket: "${bucket}", workdir: "${WORKDIR}"`);
 
-  // Initialise the S3 client
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+    // Initialise the S3 client
+    const s3Client = new S3Client({
+        region: process.env.AWS_REGION,
+        credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        },
+    });
 
-  // ── Step 1: Initial two-way sync ──────────────────────────────────────────
-  await bootstrap(s3Client, bucket, projectPrefix, WORKDIR);
+    // ── Step 1: Initial two-way sync ──────────────────────────────────────────
+    await bootstrap(s3Client, bucket, projectPrefix, WORKDIR);
 
-  // ── Step 2: Watch for changes and sync continuously ───────────────────────
-  startWatcher(s3Client, bucket, projectPrefix, WORKDIR);
+    // ── Step 2: Watch for changes and sync continuously ───────────────────────
+    startWatcher(s3Client, bucket, projectPrefix, WORKDIR);
 }
 
 // ── Graceful shutdown ────────────────────────────────────────────────────────
 
 process.on("SIGTERM", () => {
-  log("Received SIGTERM — shutting down gracefully.");
-  process.exit(0);
+    log("Received SIGTERM — shutting down gracefully.");
+    process.exit(0);
 });
 
 process.on("SIGINT", () => {
-  log("Received SIGINT — shutting down.");
-  process.exit(0);
+    log("Received SIGINT — shutting down.");
+    process.exit(0);
 });
 
 process.on("uncaughtException", (err) => {
-  log(`Uncaught exception: ${err.message}`);
-  console.error(err.stack);
-  process.exit(1);
+    log(`Uncaught exception: ${err.message}`);
+    console.error(err.stack);
+    process.exit(1);
 });
 
 main().catch((err) => {
-  log(`Fatal error in main: ${err.message}`);
-  console.error(err.stack);
-  process.exit(1);
+    log(`Fatal error in main: ${err.message}`);
+    console.error(err.stack);
+    process.exit(1);
 });

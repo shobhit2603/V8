@@ -22,69 +22,69 @@ import { toS3Key, log } from "./utils.js";
  * @param {string}   workdir        - absolute local path
  */
 export async function bootstrap(s3Client, bucket, projectPrefix, workdir) {
-  log("Bootstrap: starting initial sync…");
+    log("Bootstrap: starting initial sync…");
 
-  // ── 1. Fetch the current state of S3 ──────────────────────────────────────
-  const s3Objects = await listS3Objects(s3Client, bucket, projectPrefix);
-  log(
-    `Bootstrap: found ${s3Objects.size} object(s) in S3 under prefix "${projectPrefix}"`,
-  );
+    // ── 1. Fetch the current state of S3 ──────────────────────────────────────
+    const s3Objects = await listS3Objects(s3Client, bucket, projectPrefix);
+    log(`Bootstrap: found ${s3Objects.size} object(s) in S3 under prefix "${projectPrefix}"`);
 
-  // ── 2. Walk local disk ────────────────────────────────────────────────────
-  const localFiles = await walkDir(workdir);
-  log(`Bootstrap: found ${localFiles.length} local file(s) in ${workdir}`);
+    // ── 2. Walk local disk ────────────────────────────────────────────────────
+    const localFiles = await walkDir(workdir);
+    log(`Bootstrap: found ${localFiles.length} local file(s) in ${workdir}`);
 
-  // Build a quick lookup: relPath -> local mtime
-  const localMtimes = new Map();
-  for (const rel of localFiles) {
-    const mtime = await getLocalMtime(path.join(workdir, rel));
-    localMtimes.set(rel, mtime);
-  }
-
-  // ── 3. Pull from S3: files that are newer in S3 or missing locally ────────
-  let pulled = 0;
-  for (const [relKey, s3Mtime] of s3Objects.entries()) {
-    // Normalize separators (S3 always uses forward slashes)
-    const relPath = relKey.split("/").join(path.sep);
-
-    if (shouldIgnore(relPath)) continue;
-
-    const localPath = path.join(workdir, relPath);
-    const localMtime = localMtimes.get(relPath);
-
-    await ensureDir(path.dirname(localPath));
-    await downloadFile(
-      s3Client,
-      bucket,
-      toS3Key(projectPrefix, relKey),
-      localPath,
-    );
-    log(`  ↓ pulled  ${relKey}`);
-    pulled++;
-  }
-
-  // ── 4. Push to S3: files that are missing in S3 ──────────
-  let pushed = 0;
-  for (const [relPath, localMtime] of localMtimes.entries()) {
-    // Convert local path sep to S3 forward-slash key
-    const relKey = relPath.split(path.sep).join("/");
-    const s3Mtime = s3Objects.get(relKey);
-
-    if (shouldIgnore(relPath)) continue;
-
-    const needsUpload = !s3Mtime;
-
-    if (needsUpload) {
-      await uploadFile(
-        s3Client,
-        bucket,
-        toS3Key(projectPrefix, relKey),
-        path.join(workdir, relPath),
-      );
-      log(`  ↑ pushed  ${relKey}`);
-      pushed++;
+    // Build a quick lookup: relPath -> local mtime
+    const localMtimes = new Map();
+    for (const rel of localFiles) {
+        const mtime = await getLocalMtime(path.join(workdir, rel));
+        localMtimes.set(rel, mtime);
     }
-  }
 
-  log(`Bootstrap complete — pulled ${pulled}, pushed ${pushed} file(s).`);
+    // ── 3. Pull from S3: files that are newer in S3 or missing locally ────────
+    let pulled = 0;
+    for (const [ relKey, s3Mtime ] of s3Objects.entries()) {
+        // Normalize separators (S3 always uses forward slashes)
+        const relPath = relKey.split("/").join(path.sep);
+
+        if (shouldIgnore(relPath)) continue;
+
+        const localPath = path.join(workdir, relPath);
+        const localMtime = localMtimes.get(relPath);
+
+
+        await ensureDir(path.dirname(localPath));
+        await downloadFile(
+            s3Client,
+            bucket,
+            toS3Key(projectPrefix, relKey),
+            localPath
+        );
+        log(`  ↓ pulled  ${relKey}`);
+        pulled++;
+
+    }
+
+    // ── 4. Push to S3: files that are missing in S3 ──────────
+    let pushed = 0;
+    for (const [ relPath, localMtime ] of localMtimes.entries()) {
+        // Convert local path sep to S3 forward-slash key
+        const relKey = relPath.split(path.sep).join("/");
+        const s3Mtime = s3Objects.get(relKey);
+
+        if (shouldIgnore(relPath)) continue;
+
+        const needsUpload = !s3Mtime
+
+        if (needsUpload) {
+            await uploadFile(
+                s3Client,
+                bucket,
+                toS3Key(projectPrefix, relKey),
+                path.join(workdir, relPath)
+            );
+            log(`  ↑ pushed  ${relKey}`);
+            pushed++;
+        }
+    }
+
+    log(`Bootstrap complete — pulled ${pulled}, pushed ${pushed} file(s).`);
 }

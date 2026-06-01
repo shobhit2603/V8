@@ -1,43 +1,50 @@
-import { ChatMistralAI } from "@langchain/mistralai";
-import { createAgent } from "langchain";
-import { list_files, read_file, update_file } from "./tools.js";
-import { ChatGoogle } from "@langchain/google";
-import * as z from "zod";
+import { ChatMistralAI } from "@langchain/mistralai"
+import { createAgent } from "langchain"
+import { list_files, read_file, update_file } from "./tools.js"
+import { ChatGoogle } from "@langchain/google"
+import * as z from "zod"
 import { ChatAnthropic } from "@langchain/anthropic";
 
 const model = new ChatAnthropic({
-  model: "claude-sonnet-4-20250514",
+  model: "claude-sonnet-4-6",
   apiKey: process.env.CLAUDE_API_KEY,
   temperature: 0,
+  streaming: true
 });
 
 const mediumModel = new ChatMistralAI({
   model: "mistral-medium-latest",
   apiKey: process.env.MISTRAL_API_KEY,
-});
+  streaming: true
+})
 
 const gemini = new ChatGoogle({
   apiKey: process.env.GOOGLE_API_KEY,
   model: "gemini-flash-latest",
-});
+  streaming: true
+})
 
 const largeModel = new ChatMistralAI({
   model: "mistral-large-latest",
   apiKey: process.env.MISTRAL_API_KEY,
   temperature: 0.2,
-});
+  streaming: true
+})
 
 const smallModel = new ChatMistralAI({
   model: "mistral-small-latest",
   apiKey: process.env.MISTRAL_API_KEY,
-});
+  streaming: true
+})
 
 const codeModel = new ChatMistralAI({
   model: "codestral-latest",
   apiKey: process.env.MISTRAL_API_KEY,
-});
+  streaming: true
+})
 
 export const intentAgent = createAgent({
+
   model: mediumModel,
   tools: [],
   systemPrompt: `You are the Intent Agent in a frontend code generation pipeline. Your sole responsibility is to deeply understand what the user wants to build and produce a precise, structured implementation plan that a Code Agent can execute without ambiguity.
@@ -94,17 +101,14 @@ You must ALWAYS respond with a single valid JSON object matching the defined sch
 `,
 
   responseFormat: z.object({
-    implementationPlan: z
-      .string()
-      .describe(
-        "A detailed implementation plan in plain English that the Code Agent can follow to build the app. This should include the file structure, component descriptions, design direction, data shapes, routing, and complexity flags.",
-      ),
-  }),
-});
+    implementationPlan: z.string().describe("A detailed implementation plan in plain English that the Code Agent can follow to build the app. This should include the file structure, component descriptions, design direction, data shapes, routing, and complexity flags.")
+  })
+
+})
 
 export const codeAgent = createAgent({
   model: model,
-  tools: [list_files, read_file, update_file],
+  tools: [ list_files, read_file, update_file ],
   systemPrompt: ` 
 You are an autonomous frontend engineering agent. You receive a user's natural language request 
 describing a frontend application and you build it completely — from understanding the intent to 
@@ -514,10 +518,12 @@ When all files have been written:
 - If any file is missing, write it immediately
 - Once verified, stop. Output nothing. Your job is done.
 
-  `,
+  `
 }).withConfig({
   recursionLimit: 100,
   configurable: {
-    timeout: 6000000,
-  },
-});
+    timeout: 6000000
+  }
+})
+
+

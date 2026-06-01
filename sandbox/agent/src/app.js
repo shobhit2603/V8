@@ -1,15 +1,27 @@
-import express from "express";
-import morgan from "morgan";
-import path from "path";
-import fs from "fs/promises";
+import express from 'express';
+import morgan from 'morgan';
+import path from 'path';
+import fs from 'fs/promises';
 
-const WORKDIR = "/workspace";
+
+const WORKDIR = "/workspace"
 
 const app = express();
 
-app.use(morgan("dev"));
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 /**
  * @route GET /list-files
@@ -20,38 +32,39 @@ app.use(express.urlencoded({ extended: true }));
  *  "src/App.css",
  * ]
  *
- * this exclude directories like node_modules, .git, dist, build, etc.
+ * this exclude directories like node_modules, .git, dist, build, etc. 
  */
 
 async function listFiles(dir) {
-  let results = [];
-  const list = await fs.readdir(dir, { withFileTypes: true });
-  for (const file of list) {
-    if (file.isDirectory()) {
-      if (["node_modules", ".git", "dist", "build"].includes(file.name)) {
-        continue; // skip these directories
-      }
-      const subDirFiles = await listFiles(path.join(dir, file.name));
-      results = results.concat(subDirFiles);
-    } else {
-      results.push(path.relative(WORKDIR, path.join(dir, file.name)));
+    let results = [];
+    const list = await fs.readdir(dir, { withFileTypes: true });
+    for (const file of list) {
+        if (file.isDirectory()) {
+            if ([ 'node_modules', '.git', 'dist', 'build' ].includes(file.name)) {
+                continue; // skip these directories
+            }
+            const subDirFiles = await listFiles(path.join(dir, file.name));
+            results = results.concat(subDirFiles);
+        } else {
+            results.push(path.relative(WORKDIR, path.join(dir, file.name)));
+        }
     }
-  }
-  return results;
+    return results;
 }
 
-app.get("/list-files", async (req, res) => {
-  try {
-    const files = await listFiles(WORKDIR);
-    res.json({
-      message: "Files listed successfully",
-      files: files,
-    });
-  } catch (error) {
-    console.error("Error listing files:", error);
-    res.status(500).json({ error: "Failed to list files" });
-  }
+app.get('/list-files', async (req, res) => {
+    try {
+        const files = await listFiles(WORKDIR);
+        res.json({
+            message: 'Files listed successfully',
+            files: files
+        });
+    } catch (error) {
+        console.error('Error listing files:', error);
+        res.status(500).json({ error: 'Failed to list files' });
+    }
 });
+
 
 /**
  * @route GET /read-files
@@ -62,31 +75,32 @@ app.get("/list-files", async (req, res) => {
  * }
  */
 
-app.get("/read-files", async (req, res) => {
-  const files = req.query.files;
-  if (!files) {
-    return res.status(400).json({ error: "No files provided" });
-  }
-
-  const fileList = files.split(",").map((file) => file.trim());
-
-  const result = {};
-
-  for (const file of fileList) {
-    try {
-      const content = await fs.readFile(path.join(WORKDIR, file), "utf-8");
-      result[file] = content;
-    } catch (error) {
-      console.error(`Error reading file ${file}:`, error);
-      result[file] = `Error reading file: ${error.message}`;
+app.get('/read-files', async (req, res) => {
+    const files = req.query.files;
+    if (!files) {
+        return res.status(400).json({ error: 'No files provided' });
     }
-  }
 
-  res.json({
-    message: "Files read successfully",
-    files: result,
-  });
+    const fileList = files.split(',').map(file => file.trim());
+
+    const result = {};
+
+    for (const file of fileList) {
+        try {
+            const content = await fs.readFile(path.join(WORKDIR, file), 'utf-8');
+            result[ file ] = content;
+        } catch (error) {
+            console.error(`Error reading file ${file}:`, error);
+            result[ file ] = `Error reading file: ${error.message}`;
+        }
+    }
+
+    res.json({
+        message: 'Files read successfully',
+        files: result
+    });
 });
+
 
 /**
  * @route POST /update-files
@@ -96,40 +110,41 @@ app.get("/read-files", async (req, res) => {
  *  "src/App.jsx": "new file content",
  * }
  */
-app.post("/update-files", async (req, res) => {
-  const files = req.body.files;
-  if (!files || typeof files !== "object") {
-    return res.status(400).json({ error: "Invalid request body" });
-  }
-
-  const result = {};
-
-  for (const [file, content] of Object.entries(files)) {
-    try {
-      try {
-        await fs.access(path.dirname(path.join(WORKDIR, file)));
-      } catch {
-        await fs.mkdir(path.dirname(path.join(WORKDIR, file)), {
-          recursive: true,
-        });
-      }
-
-      await fs.writeFile(path.join(WORKDIR, file), content, "utf-8");
-      result[file] = "File updated successfully";
-    } catch (error) {
-      console.error(`Error updating file ${file}:`, error);
-      result[file] = `Error updating file: ${error.message}`;
+app.post('/update-files', async (req, res) => {
+    const files = req.body.files;
+    if (!files || typeof files !== 'object') {
+        return res.status(400).json({ error: 'Invalid request body' });
     }
-  }
 
-  res.json({
-    message: "Files updated successfully",
-    files: result,
-  });
+    const result = {};
+
+    for (const [ file, content ] of Object.entries(files)) {
+        try {
+            try {
+                await fs.access(path.dirname(path.join(WORKDIR, file)))
+            }
+            catch {
+                await fs.mkdir(path.dirname(path.join(WORKDIR, file)), { recursive: true });
+            }
+
+            await fs.writeFile(path.join(WORKDIR, file), content, 'utf-8');
+            result[ file ] = 'File updated successfully';
+        } catch (error) {
+            console.error(`Error updating file ${file}:`, error);
+            result[ file ] = `Error updating file: ${error.message}`;
+        }
+    }
+
+    res.json({
+        message: 'Files updated successfully',
+        files: result
+    });
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
+
+
+app.get('/', (req, res) => {
+    res.send('Hello World!');
 });
 
 export default app;

@@ -16,8 +16,8 @@
  * @returns {string}
  */
 export function toS3Key(prefix, relKey) {
-  // Guard against double slashes
-  return `${prefix}${relKey.replace(/^\/+/, "")}`;
+    // Guard against double slashes
+    return `${prefix}${relKey.replace(/^\/+/, "")}`;
 }
 
 /**
@@ -28,9 +28,9 @@ export function toS3Key(prefix, relKey) {
  * @returns {string}  e.g. "proj-abc123/"
  */
 export function buildPrefix(projectId) {
-  const clean = projectId.replace(/^\/+|\/+$/g, "");
-  if (!clean) throw new Error("PROJECTID must not be empty");
-  return `${clean}/`;
+    const clean = projectId.replace(/^\/+|\/+$/g, "");
+    if (!clean) throw new Error("PROJECTID must not be empty");
+    return `${clean}/`;
 }
 
 /**
@@ -40,6 +40,6 @@ export function buildPrefix(projectId) {
  * @param {string} message
  */
 export function log(message) {
-  const ts = new Date().toISOString();
-  console.log(`[${ts}] ${message}`);
+    const ts = new Date().toISOString();
+    console.log(`[${ts}] ${message}`);
 }
